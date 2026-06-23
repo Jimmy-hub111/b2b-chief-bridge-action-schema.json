@@ -1,0 +1,248 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Chief Bridge Minimal Create Task Action",
+    "version": "0.1.0",
+    "description": "Minimal ChatGPT Action schema for creating one plan-only read-only Bridge task."
+  },
+  "servers": [
+    {
+      "url": "https://harrison-host-jvc-hartford.trycloudflare.com",
+      "description": "Temporary Cloudflare Tunnel URL for Bridge testing only."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ChiefBridgeApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "Use CHIEF_BRIDGE_TOKEN only. Do not include Bearer prefix."
+      }
+    },
+    "schemas": {
+      "TaskPacket": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_id",
+          "source",
+          "created_by",
+          "priority",
+          "provider_mode",
+          "objective",
+          "execution_mode",
+          "sandbox_mode",
+          "auto_trigger",
+          "explicit_user_approval",
+          "create_patch_pr",
+          "allowed_scope",
+          "forbidden_scope",
+          "acceptance_criteria",
+          "rollback_requirements",
+          "report_path"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{3,120}$",
+            "description": "Use a new unique task id, for example DRY_RUN_007_CHATGPT_ACTION_FIRST_FULL_LOOP_YYYYMMDDHHMMSS."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "CHATGPT_CHIEF"
+            ],
+            "default": "CHATGPT_CHIEF"
+          },
+          "created_by": {
+            "type": "string",
+            "default": "ChatGPT Chief"
+          },
+          "priority": {
+            "type": "string",
+            "default": "P0"
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "chat_completions_gateway"
+            ],
+            "default": "chat_completions_gateway"
+          },
+          "objective": {
+            "type": "string",
+            "description": "Describe the dry-run report-only objective."
+          },
+          "execution_mode": {
+            "type": "string",
+            "enum": [
+              "plan-only"
+            ],
+            "default": "plan-only"
+          },
+          "sandbox_mode": {
+            "type": "string",
+            "enum": [
+              "read-only"
+            ],
+            "default": "read-only"
+          },
+          "auto_trigger": {
+            "type": "boolean",
+            "const": true,
+            "default": true
+          },
+          "explicit_user_approval": {
+            "type": "boolean",
+            "const": true,
+            "default": true
+          },
+          "create_patch_pr": {
+            "type": "boolean",
+            "const": false,
+            "default": false
+          },
+          "allowed_scope": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "forbidden_scope": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "rollback_requirements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "report_path": {
+            "type": "string",
+            "description": "Must stay under chief-bridge/ai-control/reports/ or ai-control/reports/."
+          }
+        }
+      },
+      "CreateTaskResponse": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          },
+          "github_path": {
+            "type": "string"
+          },
+          "workflow_status": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "ChiefBridgeApiKey": []
+    }
+  ],
+  "paths": {
+    "/api/chief/tasks": {
+      "post": {
+        "operationId": "createChiefTask",
+        "summary": "Create a plan-only read-only Bridge task.",
+        "security": [
+          {
+            "ChiefBridgeApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskPacket"
+              },
+              "example": {
+                "task_id": "DRY_RUN_007_CHATGPT_ACTION_FIRST_FULL_LOOP_YYYYMMDDHHMMSS",
+                "source": "CHATGPT_CHIEF",
+                "created_by": "ChatGPT Chief",
+                "priority": "P0",
+                "provider_mode": "chat_completions_gateway",
+                "objective": "Verify ChatGPT Action can create a plan-only read-only task through Bridge and trigger the dry-run workflow.",
+                "execution_mode": "plan-only",
+                "sandbox_mode": "read-only",
+                "auto_trigger": true,
+                "explicit_user_approval": true,
+                "create_patch_pr": false,
+                "allowed_scope": [
+                  "chief-bridge docs",
+                  "chief-bridge ai-control inbox",
+                  "chief-bridge ai-control reports",
+                  "GitHub Actions dry-run logs",
+                  "runner-artifacts"
+                ],
+                "forbidden_scope": [
+                  "production",
+                  "systemd",
+                  "nginx",
+                  "database migration",
+                  "real customer data",
+                  "API keys",
+                  "tokens",
+                  "cookies",
+                  "base_url output",
+                  "business deploy",
+                  "force push",
+                  "auto merge"
+                ],
+                "acceptance_criteria": [
+                  "ChatGPT Action creates the dry-run task through Bridge.",
+                  "Bridge writes the task into GitHub inbox.",
+                  "Bridge triggers workflow_dispatch.",
+                  "workflow uses chat_completions_gateway.",
+                  "Chat Completions Worker generates a Markdown report.",
+                  "No PR is generated.",
+                  "No production deploy is performed.",
+                  "No secret is leaked."
+                ],
+                "rollback_requirements": [
+                  "If failed, write a failed report only.",
+                  "No production rollback is needed because production operations are forbidden."
+                ],
+                "report_path": "chief-bridge/ai-control/reports/DRY_RUN_007_CHATGPT_ACTION_FIRST_FULL_LOOP_YYYYMMDDHHMMSS_REPORT.md"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTaskResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate task id. Use a new unique task_id."
+          }
+        }
+      }
+    }
+  }
+}
